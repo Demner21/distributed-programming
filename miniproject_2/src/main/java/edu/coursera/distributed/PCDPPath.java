@@ -22,7 +22,8 @@ public final class PCDPPath {
             throw new RuntimeException("Only absolute paths supported, " +
                     "received path \"" + path + "\"");
         }
-
+        System.out.println("formando objeto PCDPPath");
+        System.out.println(path);
         components = path.substring(1).split("/");
     }
 

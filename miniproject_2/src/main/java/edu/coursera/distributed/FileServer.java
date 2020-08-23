@@ -1,12 +1,11 @@
 package edu.coursera.distributed;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.File;
 
 /**
  * A basic and very limited implementation of a file server that responds to GET
@@ -32,11 +31,11 @@ public final class FileServer {
          */
         while (true) {
 
-            // TODO Delete this once you start working on your solution.
-            throw new UnsupportedOperationException();
 
             // TODO 1) Use socket.accept to get a Socket object
-
+          Socket socketAcceptFromClient = socket.accept();
+          
+          
             /*
              * TODO 2) Using Socket.getInputStream(), parse the received HTTP
              * packet. In particular, we are interested in confirming this
@@ -46,7 +45,49 @@ public final class FileServer {
              *
              *     GET /path/to/file HTTP/1.1
              */
-
+          
+//          InputStream httpPacket = socketAcceptFromClient.getInputStream();
+//          
+//          InputStreamReader reader = new InputStreamReader(httpPacket);
+//          BufferedReader buffered = new BufferedReader(reader);
+          
+          try(
+              BufferedReader buffered = new BufferedReader(new InputStreamReader(socketAcceptFromClient.getInputStream()));
+              
+              PrintWriter printer = new PrintWriter(socketAcceptFromClient.getOutputStream());
+              
+              ){
+            
+            String line = buffered.readLine();
+            assert line !=null;
+            assert line.startsWith("GET");
+            //extract the path
+            final String path = line.split(" ")[1];
+            PCDPPath pcdpPath = new PCDPPath(path);
+            String fileContent = fs.readFile(pcdpPath);
+            
+            
+//            OutputStream outputStream = socketAcceptFromClient.getOutputStream();
+//            PrintWriter printer = new PrintWriter(outputStream);
+            
+            
+            if (fileContent==null) {
+              printer.write("HTTP/1.0 404 Not Found\r\n");
+              printer.write("\r\n");
+              printer.write("\r\n");
+              return;
+            }
+            
+            printer.write("HTTP/1.0 200 OK\r\n");
+            printer.write("Server: FileServer\r\n");
+            printer.write("\r\n");
+            printer.write(fileContent+"\r\n");
+            
+          }
+          
+          
+          
+          
             /*
              * TODO 3) Using the parsed path to the target file, construct an
              * HTTP reply and write it to Socket.getOutputStream(). If the file
@@ -69,4 +110,5 @@ public final class FileServer {
              */
         }
     }
+
 }
