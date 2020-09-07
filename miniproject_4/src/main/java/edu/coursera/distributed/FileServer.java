@@ -1,12 +1,11 @@
 package edu.coursera.distributed;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.File;
 
 /**
  * A basic and very limited implementation of a file server that responds to GET
@@ -36,11 +35,8 @@ public final class FileServer {
          */
         while (true) {
 
-            // TODO Delete this once you start working on your solution.
-            throw new UnsupportedOperationException();
-
             // TODO 1) Use socket.accept to get a Socket object
-
+             Socket socketAcceptFromClient =socket.accept();
             /*
              * TODO 2) Now that we have a new Socket object, handle the parsing
              * of the HTTP message on that socket and returning of the requested
@@ -77,6 +73,39 @@ public final class FileServer {
              * If you wish to do so, you are free to re-use code from
              * MiniProject 2 to help with completing this MiniProject.
              */
+            Thread thread= new Thread(
+            ()->{
+
+                    try(
+                        BufferedReader buffered = new BufferedReader(new InputStreamReader(socketAcceptFromClient.getInputStream()));
+                        PrintWriter printer = new PrintWriter(socketAcceptFromClient.getOutputStream());
+
+                    ){
+                        String line = buffered.readLine();
+                        assert line !=null;
+                        assert line.startsWith("GET");
+                        //extract the path
+                        final String path = line.split(" ")[1];
+                        PCDPPath pcdpPath = new PCDPPath(path);
+                        String fileContent = fs.readFile(pcdpPath);
+                        if (fileContent==null) {
+                            printer.write("HTTP/1.0 404 Not Found\r\n");
+                            printer.write("\r\n");
+                            printer.write("\r\n");
+                            return;
+                        }
+                        
+                        printer.write("HTTP/1.0 200 OK\r\n");
+                        printer.write("Server: FileServer\r\n");
+                        printer.write("\r\n");
+                        printer.write(fileContent+"\r\n");
+                    }catch(IOException  io){
+                        throw new RuntimeException(io);
+                    }
+                    
+                }
+            );
+                thread.start();
         }
     }
 }
